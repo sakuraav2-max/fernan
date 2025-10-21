@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CloudBox — Cloud Storage UI</title>
+  <style>
+    :root{
+      --bg: #071427;
+      --panel: #0e2940;
+      --muted: #9fb3c8;
+      --text: #e6f3fb;
+      --accent: #4fc3f7;
+      --glass: rgba(255,255,255,0.03);
+      --success: #7ee787;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:linear-gradient(180deg,var(--bg),#041225);-webkit-font-smoothing:antialiased}
+
+    .app{max-width:1200px;margin:28px auto;padding:20px}
+
+    /* Header */
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#1db7ff);display:flex;align-items:center;justify-content:center;font-weight:800;color:#082232}
+    .brand h1{font-size:20px;margin:0}
+    .search{flex:1;display:flex;justify-content:center}
+    .search input{width:60%;min-width:220px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);outline:none}
+    .actions{display:flex;gap:10px;align-items:center}
+    .btn{background:var(--accent);border:none;padding:10px 14px;border-radius:10px;color:#04202a;font-weight:700;cursor:pointer;box-shadow:0 8px 30px rgba(79,195,247,0.08)}
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:9px 12px;border-radius:10px;color:var(--muted);cursor:pointer}
+
+    /* Layout */
+    .layout{display:grid;grid-template-columns:260px 1fr;gap:18px}
+    .sidebar{background:var(--panel);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    .sidebar .nav{display:flex;flex-direction:column;gap:8px}
+    .nav a{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;color:var(--muted);text-decoration:none}
+    .nav a:hover{background:linear-gradient(90deg,rgba(79,195,247,0.06),rgba(79,195,247,0.02));color:var(--text)}
+
+    .main{min-height:70vh}
+
+    /* Quick stats */
+    .stats{display:flex;gap:12px;margin-bottom:16px}
+    .stat{flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border:1px solid rgba(255,255,255,0.03)}
+    .stat h3{margin:0 0 8px}
+    .stat p{color:var(--muted);margin:0}
+
+    /* Drive area */
+    .drive{background:var(--panel);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    .drive-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .upload{display:flex;gap:10px;align-items:center}
+    .upload input[type=file]{display:none}
+    .upload label{cursor:pointer}
+
+    .files-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+    .file-card{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);transition:transform .25s,box-shadow .25s}
+    .file-card:hover{transform:translateY(-8px);box-shadow:0 18px 40px rgba(2,6,23,0.6)}
+    .file-thumb{height:110px;border-radius:8px;background:linear-gradient(135deg,#09273a,#124e72);display:flex;align-items:center;justify-content:center;font-weight:800}
+    .file-meta{margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+    .file-meta .name{font-weight:700}
+    .muted{color:var(--muted)}
+
+    /* Empty state */
+    .empty{padding:24px;border-radius:10px;text-align:center;color:var(--muted)}
+
+    /* Pricing card */
+    .pricing{display:flex;gap:12px;margin-top:16px}
+    .plan{flex:1;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border:1px solid rgba(255,255,255,0.03)}
+    .plan h4{margin:0 0 8px}
+
+    /* Footer */
+    footer{margin-top:20px;color:var(--muted);font-size:13px;text-align:center}
+
+    /* Responsive */
+    @media (max-width:980px){
+      .layout{grid-template-columns:1fr}
+      .search input{width:100%}
+      .brand h1{font-size:18px}
+    }
+
+    /* subtle animations */
+    .pulse{animation:pulse 2.5s infinite}
+    @keyframes pulse{0%{box-shadow:0 6px 20px rgba(79,195,247,0.04)}50%{box-shadow:0 14px 30px rgba(79,195,247,0.08)}100%{box-shadow:0 6px 20px rgba(79,195,247,0.04)}}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">FS</div>
+        <div>
+          <h1>FronStorage</h1>
+          <div class="muted">Secure cloud storage for your files</div>
+        </div>
+      </div>
+
+      <div class="search"><input placeholder="Search files, folders, or tags..." /></div>
+
+      <div class="actions">
+        <button class="ghost">Upgrade</button>
+        <button class="btn">New Folder</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div style="margin-bottom:12px;font-weight:700">My Drive</div>
+        <nav class="nav">
+          <a href="#"><span>📁</span>&nbsp; All Files</a>
+          <a href="#"><span>⭐</span>&nbsp; Starred</a>
+          <a href="#"><span>🕘</span>&nbsp; Recent</a>
+          <a href="#"><span>🗑️</span>&nbsp; Trash</a>
+        </nav>
+
+        <div style="margin-top:18px">
+          <div class="muted" style="font-size:13px;margin-bottom:8px">Storage</div>
+          <div style="height:10px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden">
+            <div style="width:46%;height:100%;background:linear-gradient(90deg,var(--accent),#2ad0ff)"></div>
+          </div>
+          <div class="muted" style="margin-top:8px;font-size:13px">46% used • 23.1 GB of 50 GB</div>
+        </div>
+
+        <div style="margin-top:18px">
+          <div class="muted" style="font-size:13px;margin-bottom:8px">Plans</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+            <div style="padding:10px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03)">Free • 10 GB</div>
+            <div style="padding:10px;border-radius:8px;background:linear-gradient(90deg,rgba(79,195,247,0.05),transparent);border:1px solid rgba(79,195,247,0.06);font-weight:700">Pro • 50 GB</div>
+          </div>
+        </div>
+
+      </aside>
+
+      <main class="main">
+        <div class="stats">
+          <div class="stat">
+            <h3>23.1 GB</h3>
+            <p class="muted">Used storage</p>
+          </div>
+          <div class="stat">
+            <h3>1,248</h3>
+            <p class="muted">Files stored</p>
+          </div>
+          <div class="stat pulse">
+            <h3>Active</h3>
+            <p class="muted">Sync running</p>
+          </div>
+        </div>
+
+        <section class="drive">
+          <div class="drive-head">
+            <div>
+              <h2 style="margin:0">All Files</h2>
+              <div class="muted">Sorted by: Recent</div>
+            </div>
+            <div class="upload">
+              <label for="uploadFile" class="btn">Upload</label>
+              <input id="uploadFile" type="file">
+              <button class="ghost">Sort</button>
+              <button class="ghost">View</button>
+            </div>
+          </div>
+
+          <div class="files-grid">
+            <div class="file-card">
+              <div class="file-thumb">PDF</div>
+              <div class="file-meta"><div class="name">Report_Q3.pdf</div><div class="muted">1.2 MB</div></div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb">IMG</div>
+              <div class="file-meta"><div class="name">Office_Event.jpg</div><div class="muted">3.8 MB</div></div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb">DOC</div>
+              <div class="file-meta"><div class="name">Proposal.docx</div><div class="muted">420 KB</div></div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb">ZIP</div>
+              <div class="file-meta"><div class="name">Assets.zip</div><div class="muted">12.3 MB</div></div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb">XLS</div>
+              <div class="file-meta"><div class="name">Budget.xlsx</div><div class="muted">860 KB</div></div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb">MP4</div>
+              <div class="file-meta"><div class="name">DemoVideo.mp4</div><div class="muted">24.1 MB</div></div>
+            </div>
+          </div>
+
+          <div class="pricing" style="margin-top:18px">
+            <div class="plan">
+              <h4>Free</h4>
+              <div class="muted">10 GB storage • Basic support</div>
+            </div>
+            <div class="plan">
+              <h4>Pro</h4>
+              <div class="muted">50 GB storage • Priority support • $4.99/month</div>
+            </div>
+            <div class="plan">
+              <h4>Business</h4>
+              <div class="muted">1 TB storage • Team features • Contact Sales</div>
+            </div>
+          </div>
+
+        </section>
+      </main>
+    </div>
+
+    <footer>
+      Built with ♥ • CloudBox UI mockup 
+    </footer>
+  </div>
+</body>
+</html>
